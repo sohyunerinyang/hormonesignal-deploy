@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: whh-bench
+Version: 0.1.0
+Summary: HormoneSignal Bench — a benchmark for menstrual-phase prediction from wearable signals
+Requires-Python: >=3.10
+Requires-Dist: pandas>=2.0
+Requires-Dist: numpy>=1.24
+Requires-Dist: scikit-learn>=1.3
