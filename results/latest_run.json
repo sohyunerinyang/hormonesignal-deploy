@@ -1,0 +1,112 @@
+{
+  "generated_at": "2026-07-19T06:17:48.886274+00:00",
+  "data_snapshot_version": "2026-07-hackathon",
+  "phase_definition_version": "Mira-algorithm+PACTS-2025",
+  "n_participants": 40,
+  "n_rows_total": 3665,
+  "label_confidence": {
+    "n_total": 3665,
+    "n_comparable": 3509,
+    "agreement_rate": 0.7517811342262752,
+    "counts": {
+      "high": 2638,
+      "low": 871,
+      "unknown": 156
+    }
+  },
+  "model": {
+    "type": "RandomForestClassifier",
+    "n_estimators": 300,
+    "cv": "GroupKFold(5), grouped by participant id",
+    "features": [
+      "resting_hr_causal_z",
+      "nightly_temperature_causal_z",
+      "rmssd_causal_z",
+      "full_sleep_breathing_rate_causal_z",
+      "active_total_causal_z",
+      "sleep_score_causal_z",
+      "rmssd_std"
+    ]
+  },
+  "cv_summary": {
+    "mean_accuracy": 0.40402684148718804,
+    "sd_accuracy": 0.04245317711321646,
+    "n_folds": 5,
+    "ci_95_lower": 0.36681499105187987,
+    "ci_95_upper": 0.4412386919224962,
+    "majority_baseline": 0.3337515683814304,
+    "beats_baseline_significantly": true
+  },
+  "confusion_matrix": {
+    "labels": [
+      "Fertility",
+      "Follicular",
+      "Luteal",
+      "Menstrual"
+    ],
+    "matrix": [
+      [
+        119,
+        205,
+        356,
+        55
+      ],
+      [
+        93,
+        359,
+        281,
+        87
+      ],
+      [
+        98,
+        191,
+        713,
+        62
+      ],
+      [
+        50,
+        215,
+        206,
+        98
+      ]
+    ]
+  },
+  "single_signal_cv": {
+    "resting_hr": {
+      "mean": 0.3391480387800987,
+      "sd": 0.01595974025055072,
+      "n": 3469,
+      "majority_baseline": 0.33352551167483424
+    },
+    "nightly_temperature": {
+      "mean": 0.2930876910849807,
+      "sd": 0.012300382935531819,
+      "n": 3469,
+      "majority_baseline": 0.33352551167483424
+    },
+    "rmssd": {
+      "mean": 0.3103975745668109,
+      "sd": 0.01334152417583795,
+      "n": 3469,
+      "majority_baseline": 0.33352551167483424
+    },
+    "full_sleep_breathing_rate": {
+      "mean": 0.32428235049191817,
+      "sd": 0.017956459882604154,
+      "n": 3425,
+      "majority_baseline": 0.3343065693430657
+    },
+    "active_total": {
+      "mean": 0.2676404346353245,
+      "sd": 0.026156751471674802,
+      "n": 3284,
+      "majority_baseline": 0.3328258221680877
+    },
+    "sleep_score": {
+      "mean": 0.26689519193782746,
+      "sd": 0.016266337222289887,
+      "n": 3360,
+      "majority_baseline": 0.3345238095238095
+    }
+  }
+}
