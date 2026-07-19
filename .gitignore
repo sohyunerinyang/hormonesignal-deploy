@@ -1,7 +1,10 @@
 node_modules
 dist
 .DS_Store
+<<<<<<< HEAD
 __pycache__/
 *.pyc
 data/raw/
 *.csv
+=======
+>>>>>>> 2e664a63341fa9d13b4ec6205aa75d39b914041b

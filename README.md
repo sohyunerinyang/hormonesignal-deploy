@@ -37,7 +37,7 @@ cp results/latest_run.json public/results/latest_run.json
 git add results/latest_run.json public/results/latest_run.json
 git commit -m "Update results.json from latest pipeline run"
 ```
-The dashboard fetches `./results/latest_run.json` at page load. If the file
+The dashboard fetches `.ata/results/latest_run.json` at page load. If the file
 is missing (e.g. someone previews the site without ever running the
 pipeline), it falls back to the last-known bundled numbers and says so in
 the UI — it never silently pretends a fallback number is live.
