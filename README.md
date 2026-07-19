@@ -42,7 +42,8 @@ is missing (e.g. someone previews the site without ever running the
 pipeline), it falls back to the last-known bundled numbers and says so in
 the UI — it never silently pretends a fallback number is live.
 
-## Deploy so the team can view it
+## Deploy Link: 
+https://sohyunerinyang.github.io/hormonesignal-deploy/
 
 ### Option A — Vercel (easiest, free, auto-redeploys on every push)
 1. Push this folder to a GitHub repo.
