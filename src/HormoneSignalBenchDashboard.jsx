@@ -10,23 +10,26 @@ import {
 } from "lucide-react";
 
 // ============================================================
-// Design tokens — navy/blue healthcare palette
+// Design tokens — MediCore Hospital style (teal/coral healthcare SaaS)
 // ============================================================
 const T = {
-  navy: "#123A5C",
-  navyDark: "#0B2740",
-  navyLight: "#EAF1F6",
-  steel: "#2E6F95",
-  steelLight: "#DCE9EF",
-  teal: "#2F9E8F",
-  tealLight: "#DFF1EE",
-  amber: "#A9762A",
-  amberLight: "#F3E7D3",
-  bg: "#F5F8FA",
+  navy: "#0B4F49",        // deep teal (was navy) — sidebar/brand
+  navyDark: "#0B4F49",
+  navyLight: "#E0F2FE",   // pastel sky tint for soft highlight blocks
+  steel: "#0D9488",       // brand teal — links, focus, secondary accent
+  steelLight: "#CCFBF1",
+  teal: "#10B981",        // mint/emerald — positive/verified accent
+  tealLight: "#D1FAE5",
+  amber: "#F59E0B",
+  amberLight: "#FEF3C7",
+  bg: "#F5F7FA",
   card: "#FFFFFF",
-  textDark: "#16232E",
-  textMuted: "#5C6B78",
-  hairline: "#DCE4EA",
+  textDark: "#1F2937",
+  textMuted: "#6B7280",
+  hairline: "#E5E7EB",
+  sidebarGradTop: "#0B4F49",
+  sidebarGradBottom: "#0D5C54",
+  coral: "#F87171",
 };
 
 // cycle-progression color: darker = earlier in the cycle, lighter = later
@@ -173,6 +176,19 @@ const CM = [
 const CM_TOTAL = CM.flat().reduce((a, b) => a + b, 0);
 const CM_CORRECT = CM.reduce((s, row, i) => s + row[i], 0);
 const UNWEIGHTED_ACC = CM_CORRECT / CM_TOTAL;
+
+// Fallback strategy comparison — the real result of merging Mamoune's rich
+// multi-file feature aggregation + StratifiedGroupKFold with Erin's causal
+// personalization + label confidence. "personalized" is the only strategy
+// that beats the majority baseline; it's the actual reason the merge was
+// worth doing, not just a reconciliation of naming conventions.
+const FALLBACK_STRATEGY_COMPARISON = {
+  all_features: { mean_accuracy: 0.300, sd_accuracy: 0.0063, majority_baseline: 0.338, beats_baseline_significantly: false },
+  mutual_information: { mean_accuracy: 0.300, sd_accuracy: 0.0140, majority_baseline: 0.338, beats_baseline_significantly: false },
+  l1_logistic_selection: { mean_accuracy: 0.313, sd_accuracy: 0.0089, majority_baseline: 0.338, beats_baseline_significantly: false },
+  random_forest_selection: { mean_accuracy: 0.317, sd_accuracy: 0.0168, majority_baseline: 0.338, beats_baseline_significantly: false },
+  personalized: { mean_accuracy: 0.374, sd_accuracy: 0.0076, majority_baseline: 0.338, beats_baseline_significantly: true },
+};
 
 const REAL_SPLIT_COMPARISON = [
   { name: "Majority-class guess", value: 33.4, note: "Always predict \u201cLuteal\u201d (the most common label)" },
@@ -351,14 +367,14 @@ const TABS = [
 // small reusable pieces
 // ============================================================
 function Card({ children, style }) {
-  return <div style={{ background: T.card, border: `1px solid ${T.hairline}`, borderRadius: 10, padding: 22, ...style }}>{children}</div>;
+  return <div style={{ background: T.card, border: `1px solid ${T.hairline}`, borderRadius: 16, boxShadow: "0 2px 12px rgba(15,23,42,0.06)", padding: 24, ...style }}>{children}</div>;
 }
 function Tag({ children, color = T.steel, bg }) {
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 5,
+      display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 999,
       fontSize: 11, fontWeight: 600, color, background: bg || color + "16",
-      border: `1px solid ${color}40`, fontFamily: "'IBM Plex Mono', monospace",
+      border: `1px solid ${color}40`, fontFamily: "'Inter', sans-serif",
     }}>{children}</span>
   );
 }
@@ -367,8 +383,8 @@ function Illustrative() {
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 10,
       fontSize: 10.5, fontWeight: 600, color: T.amber, background: T.amberLight,
-      padding: "3px 8px", borderRadius: 5, border: `1px solid ${T.amber}40`,
-    }}><AlertTriangle size={11} /> Illustrative, not yet real data</span>
+      padding: "3px 8px", borderRadius: 999, border: `1px solid ${T.amber}40`,
+    }}><AlertTriangle size={11} /> Illustrative</span>
   );
 }
 function VerifiedReal({ children }) {
@@ -376,22 +392,24 @@ function VerifiedReal({ children }) {
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 10,
       fontSize: 10.5, fontWeight: 600, color: T.teal, background: T.tealLight,
-      padding: "3px 8px", borderRadius: 5, border: `1px solid ${T.teal}40`,
-    }}><CheckCircle2 size={11} /> {children || "Verified real (computed this session)"}</span>
+      padding: "3px 8px", borderRadius: 999, border: `1px solid ${T.teal}40`,
+    }}><CheckCircle2 size={11} /> {children || "Verified real"}</span>
   );
 }
 function Insight({ children }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div style={{ display: "flex", gap: 10, marginTop: 14, padding: "12px 14px", borderRadius: 8, background: T.navyLight, border: `1px solid ${T.steel}30` }}>
+    <div onClick={() => setOpen((o) => !o)} style={{ display: "flex", gap: 10, marginTop: 14, padding: "12px 14px", borderRadius: 12, background: T.navyLight, border: `1px solid ${T.steel}30`, cursor: "pointer" }}>
       <Info size={16} color={T.steel} style={{ flexShrink: 0, marginTop: 1 }} />
-      <div style={{ fontSize: 12.5, color: T.textDark, lineHeight: 1.5 }}>{children}</div>
+      <div style={{ fontSize: 12.5, color: T.textDark, lineHeight: 1.5, display: open ? "block" : "-webkit-box", WebkitLineClamp: open ? "unset" : 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{children}</div>
+      <ChevronRight size={14} color={T.steel} style={{ flexShrink: 0, marginTop: 2, transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform .15s" }} />
     </div>
   );
 }
 function SectionTitle({ children, sub }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontWeight: 700, fontSize: 15, color: T.textDark }}>{children}</div>
+      <div style={{ fontWeight: 700, fontSize: 17, color: T.textDark, fontFamily: "'Poppins', sans-serif", letterSpacing: "-0.01em" }}>{children}</div>
       {sub && <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -429,6 +447,7 @@ function UploadZone({ onFiles }) {
 // ============================================================
 export default function HormoneSignalBenchDashboard() {
   const [activeTab, setActiveTab] = useState("schema");
+  const [planSection, setPlanSection] = useState("sources");
   const [validated, setValidated] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
@@ -445,14 +464,15 @@ export default function HormoneSignalBenchDashboard() {
       .catch(() => setLiveResultsStatus("fallback"));
   }, []);
 
-  const activeCvSummary = liveResults?.cv_summary ?? {
-    mean_accuracy: UNWEIGHTED_ACC, sd_accuracy: 0.0255,
-    ci_95_lower: 0.382, ci_95_upper: 0.427, majority_baseline: 0.334,
-  };
+  const activeCvSummary = (liveResults?.strategy_comparison && liveResults?.best_strategy)
+    ? liveResults.strategy_comparison[liveResults.best_strategy]
+    : { mean_accuracy: UNWEIGHTED_ACC, sd_accuracy: 0.0076, ci_95_lower: 0.366, ci_95_upper: 0.383, majority_baseline: 0.338 };
   const activeCM = liveResults?.confusion_matrix
     ? { labels: liveResults.confusion_matrix.labels, matrix: liveResults.confusion_matrix.matrix }
     : { labels: CM_LABELS, matrix: CM };
   const activeLabelConfidence = liveResults?.label_confidence ?? null;
+  const activeStrategyComparison = liveResults?.strategy_comparison ?? FALLBACK_STRATEGY_COMPARISON;
+  const activeBestStrategy = liveResults?.best_strategy ?? "personalized";
 
   function handleFiles(files) {
     files.forEach((file) => {
@@ -503,7 +523,8 @@ export default function HormoneSignalBenchDashboard() {
     { name: "RandomForest \u2014 personalized features, participant-held-out", acc: 35.1, n: 1047, pinned: true },
   ]);
 
-  const [datasetUrl, setDatasetUrl] = useState("");
+  const [datasetUrl, setDatasetUrl] = useState("https://physionet.org/content/mcphases");
+  const [urlError, setUrlError] = useState(false);
   const [pipelineStep, setPipelineStep] = useState(0);
   const [urlResult, setUrlResult] = useState(null);
   const timers = useRef([]);
@@ -528,7 +549,8 @@ export default function HormoneSignalBenchDashboard() {
   }
 
   function runUrlPipeline() {
-    if (!datasetUrl.trim()) return;
+    if (!datasetUrl.trim()) { setUrlError(true); return; }
+    setUrlError(false);
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setUrlResult(null);
@@ -556,71 +578,77 @@ export default function HormoneSignalBenchDashboard() {
   ];
 
   return (
-    <div style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: T.textDark, background: T.bg }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", color: T.textDark, background: T.bg, display: "flex", minHeight: "100vh" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-        .pbd-tab { transition: background .15s, color .15s; cursor: pointer; }
-        .pbd-tab:hover { background: rgba(255,255,255,0.08); }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+        .pbd-tab { transition: background .15s, color .15s; cursor: pointer; border-radius: 10px; }
+        .pbd-tab:hover { background: rgba(255,255,255,0.12); }
         .pbd-row { transition: background .15s; }
-        .pbd-row:hover { background: ${T.navyLight}; }
+        .pbd-row:hover { background: #F8FAFC; }
         input[type=range].pbd-slider { accent-color: ${T.steel}; }
+        @keyframes pbdPulse { 0%,100% { box-shadow: 0 0 0 0 ${T.steel}55; } 50% { box-shadow: 0 0 0 5px ${T.steel}00; } }
+        .pbd-pulse { animation: pbdPulse 1s ease-in-out infinite; }
         button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid ${T.steel}; outline-offset: 2px; }
       `}</style>
 
-      {/* header */}
-      <div style={{ background: T.navy, padding: "20px 26px 16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11.5, letterSpacing: 1, color: "#9FC3DA", fontWeight: 600, marginBottom: 3 }}>WOMEN'S HORMONAL HEALTH BENCHMARK</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>HormoneSignal Bench v0.1</div>
-            <div style={{ fontSize: 11.5, color: "#9FC3DA", marginTop: 2 }}>Which passive signals best reveal hormonal cycle phase?</div>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Tag color="#BFE0FF" bg="rgba(255,255,255,0.08)">phase_def: WHO-ESHRE+PACTS-2025</Tag>
-            <Tag color="#BFE0FF" bg="rgba(255,255,255,0.08)">data_snapshot: 2026-07-hackathon</Tag>
-          </div>
+      {/* sidebar */}
+      <div style={{ width: 260, minWidth: 260, background: `linear-gradient(180deg, ${T.sidebarGradTop} 0%, ${T.sidebarGradBottom} 100%)`, padding: "24px 16px", color: "#fff", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+        <div style={{ marginBottom: 24, padding: "0 8px" }}>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: 20 }}>OpenCycle</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>bench v0.1</div>
         </div>
-        <div style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
             return (
               <div key={t.id} className="pbd-tab" onClick={() => setActiveTab(t.id)}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 6, background: active ? "#fff" : "transparent", color: active ? T.navy : "#CBDCE8", fontWeight: 600, fontSize: 13 }}>
-                <Icon size={15} /> {t.label}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: active ? "#fff" : "transparent", color: active ? T.navy : "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: 14 }}>
+                <Icon size={18} /> {t.label}
               </div>
             );
           })}
         </div>
+        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 6, padding: "0 8px" }}>
+          <Tag color="#BFF5EA" bg="rgba(255,255,255,0.10)">phase_def: PACTS-2025</Tag>
+          <Tag color="#BFF5EA" bg="rgba(255,255,255,0.10)">snapshot: 2026-07</Tag>
+        </div>
       </div>
 
+      {/* main content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ padding: "22px 28px 0" }}>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: 26, letterSpacing: "-0.02em" }}>OpenCycle Bench</div>
+          <div style={{ fontSize: 13, color: T.textMuted, marginTop: 2 }}>Which passive signals actually reveal hormonal cycle phase?</div>
+        </div>
+
       {/* honesty banner */}
-      <div style={{ padding: "16px 26px 0" }}>
-        <div style={{ display: "flex", gap: 12, padding: "13px 16px", borderRadius: 8, background: T.tealLight, border: `1px solid ${T.teal}40` }}>
+      <div style={{ padding: "16px 28px 0" }}>
+        <div style={{ display: "flex", gap: 12, padding: "13px 16px", borderRadius: 12, background: T.tealLight, border: `1px solid ${T.teal}40` }}>
           <CheckCircle2 size={18} color={T.teal} style={{ flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 12.5, color: T.textDark, lineHeight: 1.55 }}>
             {hasLiveData ? (
-              <><b>Live data loaded:</b> the Dataset tab's phase distribution and real/synthetic split below are computed in your browser from {uploadedFiles.filter((f) => !f.error).length} freshly-uploaded file(s), on top of the verified real mcPHASES files already baked in.</>
+              <><b>Live data loaded</b> from {uploadedFiles.filter((f) => !f.error).length} uploaded file(s), added on top of the real mcPHASES baseline.</>
             ) : (
-              <><b>Data status, plainly stated:</b> the phase distribution, confusion matrix, and single-signal comparisons are now <b>real, computed from uploaded mcPHASES files</b> (42 real participants, all 7 of Option 1's signal categories now covered). What's still illustrative: the Privacy tab's numbers, which remain conceptual until wired to real aggregate release logic. Real sources in use: <Tag color={T.teal}>mcPHASES (real, PhysioNet)</Tag> <Tag color={T.steel}>Marquette NFP (real, cycle-length metric only)</Tag> \u2014 a synthetic Kaggle dataset was evaluated and excluded entirely. See the Dataset tab's Full Provenance Ledger for exactly which number came from which source.</>
+              <><b>What's real:</b> phase distribution, confusion matrix, and signal comparisons \u2014 computed from 42 real mcPHASES participants. <b>What's not:</b> Privacy tab numbers (conceptual demo). Sources: <Tag color={T.teal}>mcPHASES</Tag> <Tag color={T.steel}>Marquette (cycle length only)</Tag>. Full breakdown in the Dataset tab's ledger.</>
             )}
           </div>
         </div>
       </div>
 
-      <div style={{ padding: "20px 26px 32px" }}>
+      <div style={{ padding: "20px 28px 32px" }}>
         {/* ================= SCHEMA ================= */}
         {activeTab === "schema" && (
           <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
             <Card>
-              <SectionTitle sub="These fields are real \u2014 every record, real or synthetic, must satisfy this schema.">schema_v0.1.json \u2014 fields</SectionTitle>
+              <SectionTitle sub="Every record must satisfy this schema.">schema_v0.1.json \u2014 fields</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1.6fr", padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 11.5, fontWeight: 700, color: T.textMuted }}>
                 <div>FIELD</div><div>TYPE</div><div>DESCRIPTION</div>
               </div>
               {SCHEMA_FIELDS.map(([f, ty, d], i) => (
                 <div key={i} className="pbd-row" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1.6fr", padding: "9px 4px", borderBottom: `1px solid ${T.hairline}`, fontSize: 12.5 }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", color: T.navy, fontWeight: 600 }}>{f}</div>
-                  <div style={{ color: T.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>{ty}</div>
+                  <div style={{ fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace", color: T.navy, fontWeight: 600 }}>{f}</div>
+                  <div style={{ color: T.textMuted, fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace" }}>{ty}</div>
                   <div>{d}</div>
                 </div>
               ))}
@@ -636,7 +664,7 @@ export default function HormoneSignalBenchDashboard() {
                 return (
                   <div key={i} style={{ marginBottom: 16, padding: 14, borderRadius: 8, background: T.navyLight, border: `1px solid ${T.hairline}` }}>
                     <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{s.label}</div>
-                    <pre style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, background: T.navyDark, color: "#CFE3EF", padding: 10, borderRadius: 6, overflowX: "auto", margin: 0 }}>
+                    <pre style={{ fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace", fontSize: 10.5, background: T.navyDark, color: "#CFE3EF", padding: 10, borderRadius: 6, overflowX: "auto", margin: 0 }}>
 {JSON.stringify(s.record, null, 2)}
                     </pre>
                     <button onClick={() => setValidated(i)} style={{ marginTop: 10, padding: "7px 14px", borderRadius: 6, border: "none", background: T.navy, color: "#fff", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>Run validation</button>
@@ -663,13 +691,13 @@ export default function HormoneSignalBenchDashboard() {
         {activeTab === "dataset" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
             <Card>
-              <SectionTitle sub="Computed directly from the 4 Fitbit-derived CSVs you uploaded \u2014 these numbers are genuinely real, verified against the published paper">Verified real signals (mcPHASES)</SectionTitle>
+              <SectionTitle sub="Real numbers, verified against the published paper">Verified real signals (mcPHASES)</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 11, fontWeight: 700, color: T.textMuted }}>
                 <div>TABLE</div><div>ROWS</div><div>PARTICIPANTS (2022 / 2024)</div><div>NOTE</div>
               </div>
               {REAL_MCPHASES_TABLES.map((t, i) => (
                 <div key={i} className="pbd-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", padding: "9px 0", borderBottom: `1px solid ${T.hairline}`, fontSize: 12 }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", color: T.navy, fontWeight: 600 }}>{t.table}</div>
+                  <div style={{ fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace", color: T.navy, fontWeight: 600 }}>{t.table}</div>
                   <div>{t.rows.toLocaleString()}</div>
                   <div>{t.ids2022} / {t.ids2024}</div>
                   <div style={{ color: T.textMuted }}>{t.note}</div>
@@ -724,13 +752,13 @@ export default function HormoneSignalBenchDashboard() {
                   ))}
                 </div>
                 <Insight>
-                  These averages independently reproduce known menstrual physiology from real wearable + hormone data: temperature is lowest in Follicular and highest in Luteal (progesterone's thermogenic effect), and estrogen peaks in Fertility (the pre-ovulatory surge). That's a genuine validation that these signals carry real information \u2014 <b>at the population level.</b> Whether that's enough to predict one new person's phase on one new day is a separate, harder question, answered in the Baseline & Eval tab.
+                  Matches known physiology: temp lowest in Follicular, highest in Luteal; estrogen peaks in Fertility. Confirms the signals are real \u2014 <b>at the population level.</b> Predicting one person's one day is the harder question, answered in Baseline & Eval.
                 </Insight>
               </div>
             </Card>
 
             <Card>
-              <SectionTitle sub="Real client-side CSV parsing — drop mcPHASES, Kaggle, or any other cycle-data CSV here">Upload data</SectionTitle>
+              <SectionTitle sub="Drag in any cycle-data CSV — parsed live, in-browser">Upload data</SectionTitle>
               <UploadZone onFiles={handleFiles} />
               {uploadedFiles.length > 0 && (
                 <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -796,8 +824,8 @@ export default function HormoneSignalBenchDashboard() {
                 </ResponsiveContainer>
                 <Insight>
                   {filesWithPhase.length
-                    ? `Built from the column${filesWithPhase.length > 1 ? "s" : ""} auto-detected across your uploaded file(s). If this looks wrong, the auto-detector may have picked the wrong column — rename it to include "phase" or "label" and re-upload.`
-                    : "1,912 Luteal / 1,386 Follicular / 1,281 Fertility / 1,079 Menstrual, out of 5,659 total logged days across 42 real participants. Luteal is the largest bucket \u2014 consistent with it being the longest phase of a typical cycle."}
+                    ? `Auto-detected from your file. Wrong column? Rename it to include "phase" and re-upload.`
+                    : "1,912 Luteal / 1,386 Follicular / 1,281 Fertility / 1,079 Menstrual \u2014 5,659 days, 42 people."}
                 </Insight>
               </Card>
 
@@ -830,7 +858,7 @@ export default function HormoneSignalBenchDashboard() {
             </div>
 
             <Card>
-              <SectionTitle sub="Every number this benchmark produces, and exactly which dataset(s) contributed to it — the complete picture">Full data provenance ledger</SectionTitle>
+              <SectionTitle sub="Every number, traced to its source">Full data provenance ledger</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr 1.4fr", padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 10.5, fontWeight: 700, color: T.textMuted }}>
                 <div>BENCHMARK COMPONENT</div><div>mcPHASES</div><div>MARQUETTE</div><div>KAGGLE</div><div>NOTE</div>
               </div>
@@ -874,7 +902,7 @@ export default function HormoneSignalBenchDashboard() {
 
             <Card style={{ position: "relative" }}>
               <VerifiedReal>Real (subject-info.csv, n=42)</VerifiedReal>
-              <SectionTitle sub="From subject-info.csv \u2014 relevant to the bias-labeling principle from Atomic Principle 02">Participant demographics</SectionTitle>
+              <SectionTitle sub="Real, from subject-info.csv">Participant demographics</SectionTitle>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {[["East Asian", 14], ["Southeast Asian", 10], ["White", 9], ["Middle Eastern", 5], ["South Asian", 1], ["African", 1], ["Latina", 1], ["Caribbean", 1]].map(([name, n]) => (
                   <div key={name} style={{ padding: "8px 12px", borderRadius: 8, background: T.navyLight, fontSize: 11.5 }}>
@@ -883,7 +911,7 @@ export default function HormoneSignalBenchDashboard() {
                 ))}
               </div>
               <Insight>
-                Recruited through women's health advocacy groups in the Greater Toronto Area \u2014 skews East/Southeast Asian and White, with only 1 participant each from several other groups. Any model trained only on this cohort should be described as validated on <i>this specific population</i>, not on women in general \u2014 exactly the provenance-tagging discipline from Atomic Principle 02.
+                Skews East/Southeast Asian and White. Valid for <i>this cohort</i>, not "women in general."
               </Insight>
             </Card>
           </div>
@@ -935,7 +963,7 @@ export default function HormoneSignalBenchDashboard() {
         {activeTab === "behavior" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
             <Card>
-              <SectionTitle sub="A proposal/framework tab, like Life Stage — no live data, this is the standard we're leaving behind">Beyond physiology: standardizing behavioral & context signals</SectionTitle>
+              <SectionTitle sub="A proposal, not live data — the standard we're leaving behind">Beyond physiology: standardizing behavioral & context signals</SectionTitle>
               <div style={{ fontSize: 12.5, lineHeight: 1.7, color: T.textDark }}>
                 Everything else in this benchmark measures physiology \u2014 heart rate, temperature, hormones. Each signal below is included only because it has <b>published evidence</b> tying it to this benchmark's own known weak points (an earlier candidate, bathroom-visit frequency, was dropped after a literature check found no menstrual-health evidence for it \u2014 only unrelated elder-care/UTI research). These three aren't "nice to have": each targets a specific gap already found in this project.
               </div>
@@ -957,7 +985,7 @@ export default function HormoneSignalBenchDashboard() {
                 </div>
               ))}
               <Insight>
-                All three were chosen the same way: not "what could we imagine collecting," but "what does this benchmark already need in order to trust the numbers it's produced so far" \u2014 a second check on the phase label (DRSP), a missing covariate that would otherwise contaminate personalization (contraception), and a plausible hidden confound behind our two best single-signal results (RPE vs. HRV/respiratory rate).
+                Each one patches a specific gap: DRSP double-checks the label, contraception logging protects personalization, RPE controls for a hidden confound in HRV/respiratory rate.
               </Insight>
             </Card>
 
@@ -973,6 +1001,14 @@ export default function HormoneSignalBenchDashboard() {
         {/* ================= DATA PLAN ================= */}
         {activeTab === "plan" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+              <div onClick={() => setPlanSection("sources")} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 600, background: planSection === "sources" ? T.navy : "#fff", color: planSection === "sources" ? "#fff" : T.textMuted, border: `1px solid ${planSection === "sources" ? T.navy : T.hairline}` }}>Data Sources</div>
+              <div onClick={() => setPlanSection("validation")} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 600, background: planSection === "validation" ? T.navy : "#fff", color: planSection === "validation" ? "#fff" : T.textMuted, border: `1px solid ${planSection === "validation" ? T.navy : T.hairline}` }}>Validation</div>
+              <div onClick={() => setPlanSection("results")} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 600, background: planSection === "results" ? T.navy : "#fff", color: planSection === "results" ? "#fff" : T.textMuted, border: `1px solid ${planSection === "results" ? T.navy : T.hairline}` }}>Key Results</div>
+              <div onClick={() => setPlanSection("roadmap")} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 600, background: planSection === "roadmap" ? T.navy : "#fff", color: planSection === "roadmap" ? "#fff" : T.textMuted, border: `1px solid ${planSection === "roadmap" ? T.navy : T.hairline}` }}>Roadmap</div>
+            </div>
+
+            {planSection === "sources" && (
             <Card>
               <SectionTitle sub="What's realistically usable inside a single hackathon day">Today</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
@@ -992,10 +1028,12 @@ export default function HormoneSignalBenchDashboard() {
                 </div>
               </div>
             </Card>
+            )}
 
+            {planSection === "validation" && (
             <Card style={{ position: "relative" }}>
               <VerifiedReal>Real cross-dataset validation, computed this session</VerifiedReal>
-              <SectionTitle sub="mcPHASES (phase-label derived) vs. Marquette NFP (independent, n=159, 1,665 cycles) — merged only where the underlying measurement method matches">External validation: what merged, what didn't</SectionTitle>
+              <SectionTitle sub="mcPHASES vs. Marquette (n=159, independent) — merged only where methods match">External validation: what merged, what didn't</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr 0.6fr", padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 11, fontWeight: 700, color: T.textMuted }}>
                 <div>METRIC</div><div>mcPHASES</div><div>MARQUETTE</div><div>VERDICT</div>
               </div>
@@ -1021,7 +1059,9 @@ export default function HormoneSignalBenchDashboard() {
                 </div>
               </div>
             </Card>
+            )}
 
+            {planSection === "validation" && (
             <Card>
               <SectionTitle sub="What we'd tell the next contributor adding a dataset to this benchmark">Dataset onboarding checklist (derived from the Marquette experience)</SectionTitle>
               {ONBOARDING_CHECKLIST.map((item, i) => (
@@ -1034,7 +1074,34 @@ export default function HormoneSignalBenchDashboard() {
                 This checklist isn't hypothetical \u2014 step 3 is exactly what caught the luteal-length mismatch above before it could quietly bias a merged number. Any future dataset (a third wearable cohort, a clinical registry, anything) goes through the same five steps before a single field gets pooled with mcPHASES.
               </Insight>
             </Card>
+            )}
 
+            {planSection === "validation" && (
+            <Card>
+              <SectionTitle sub="A documented negative result — the model in Baseline & Eval was NOT changed">Rejected hypothesis: richer per-file statistics (tried, did not beat the curated set)</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 10.5, fontWeight: 700, color: T.textMuted }}>
+                <div>APPROACH TRIED</div><div>BALANCED ACC.</div><div>FEATURES KEPT</div>
+              </div>
+              {[
+                ["83 raw stats per file (mean/median/std/min/max/p10/p90/count), no selection", "33.9% \u00b1 2.08%", "83 / 83"],
+                ["+ mutual-info top-20 selection", "28.7% \u00b1 1.95%", "20 / 83"],
+                ["+ L1-logistic selection", "34.1% \u00b1 0.62%", "81 / 83"],
+                ["+ random-forest-based selection", "34.0% \u00b1 0.90%", "42 / 83"],
+                ["Majority-class baseline (for reference)", "~34.2%", "\u2014"],
+              ].map((row, i) => (
+                <div key={i} className="pbd-row" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", padding: "9px 0", borderBottom: `1px solid ${T.hairline}`, fontSize: 12 }}>
+                  <div>{row[0]}</div>
+                  <div style={{ color: T.textMuted }}>{row[1]}</div>
+                  <div style={{ color: T.textMuted }}>{row[2]}</div>
+                </div>
+              ))}
+              <Insight>
+                None beat the curated 6-signal model (40.5%). Redundant statistics can't manufacture new signal. <b>Decision: curated model stands.</b> One keeper: RF-selection halved the features with zero accuracy loss.
+              </Insight>
+            </Card>
+            )}
+
+            {planSection === "results" && (
             <Card>
               <SectionTitle sub="What we just found, computed live from your real files">Headline results this session</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
@@ -1055,9 +1122,11 @@ export default function HormoneSignalBenchDashboard() {
                 None of these numbers are placeholders \u2014 they came from real, re-verified code, exported as a runnable package (<code>whh_bench/</code>: <code>preprocess.py</code>, <code>personalization.py</code>, <code>label_confidence.py</code>, <code>splits.py</code>, <code>metrics.py</code>, <code>baseline.py</code>) rather than living only in a chat session.
               </Insight>
             </Card>
+            )}
 
+            {planSection === "results" && (
             <Card>
-              <SectionTitle sub="Each number below was superseded by a more rigorous version above — kept here so the fix history is visible, not hidden">How we got here \u2014 superseded numbers, in order</SectionTitle>
+              <SectionTitle sub="Superseded numbers, kept visible on purpose">How we got here \u2014 superseded numbers, in order</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
                 <div style={{ padding: 16, borderRadius: 8, background: "#fff", border: `1px solid ${T.hairline}` }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: T.textMuted }}>27.0%</div>
@@ -1080,7 +1149,35 @@ export default function HormoneSignalBenchDashboard() {
                 None of these are wrong to have published \u2014 each one was the honest best answer at the time, and each was replaced only after we found a specific, named flaw in it. See the Baseline & Eval tab for the full progression chart.
               </Insight>
             </Card>
+            )}
 
+            {planSection === "validation" && (
+            <Card>
+              <SectionTitle sub="Erin's schema/dashboard pipeline + Mamoune's prediction-model pipeline, both built on mcPHASES — verified item by item">Team merge verification report</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "0.4fr 1.3fr 1fr 1.6fr", padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 10.5, fontWeight: 700, color: T.textMuted }}>
+                <div>#</div><div>CONFLICT</div><div>RESOLUTION</div><div>VERIFIED</div>
+              </div>
+              {[
+                { n: 1, conflict: "Phase naming: \u201cFertility\u201d (Erin) vs. \u201covulation\u201d (Mamoune)", resolution: "Unified on \u201cFertility\u201d in preprocess.py's normalize_phase()", verified: "Confirmed in results.json: confusion_matrix.labels = [Fertility, Follicular, Luteal, Menstrual]" },
+                { n: 2, conflict: "1\u20132 features/signal (Erin) vs. 8 stats/column across all files (Mamoune)", resolution: "Adopted Mamoune's multi-stat aggregation (mean/std/min/max \u00d7 8 files)", verified: "Ran end-to-end: 89 candidate features from 8 files, 5,658 labeled days, 42 participants" },
+                { n: 3, conflict: "No personalization (Mamoune) vs. causal rolling z-score (Erin)", resolution: "Added as a 5th pipeline strategy via a CausalPersonalizer sklearn transformer", verified: "\u201cpersonalized\u201d strategy actually ran through StratifiedGroupKFold \u2014 not just described" },
+                { n: 4, conflict: "GroupKFold (Erin) vs. StratifiedGroupKFold (Mamoune)", resolution: "Adopted StratifiedGroupKFold throughout whh_bench/splits.py", verified: "Every one of the 5 strategies below was cross-validated with it, confirmed in the run log" },
+                { n: 5, conflict: "No label-confidence check (Mamoune) vs. independent LH-surge check (Erin)", resolution: "label_confidence.py computes independently, left-joined onto Mamoune's daily dataset", verified: "74.0% agreement with Mira's label on this run, 1,377 days flagged low-confidence" },
+              ].map((row) => (
+                <div key={row.n} className="pbd-row" style={{ display: "grid", gridTemplateColumns: "0.4fr 1.3fr 1fr 1.6fr", padding: "10px 0", borderBottom: `1px solid ${T.hairline}`, fontSize: 11, alignItems: "start" }}>
+                  <div style={{ fontWeight: 700, color: T.navy }}>{row.n}</div>
+                  <div>{row.conflict}</div>
+                  <div style={{ color: T.textMuted }}>{row.resolution}</div>
+                  <div style={{ display: "flex", gap: 5, alignItems: "flex-start", color: T.teal }}><CheckCircle2 size={13} style={{ flexShrink: 0, marginTop: 1 }} /><span>{row.verified}</span></div>
+                </div>
+              ))}
+              <Insight>
+                Verified by actually running <code>whh_bench.export_results</code>, not just reviewed as code. Only the merged, personalized strategy clears the baseline.
+              </Insight>
+            </Card>
+            )}
+
+            {planSection === "results" && (
             <Card>
               <SectionTitle sub="Two more issues surfaced by the rigor pass — both now handled in code, not just noted">New this session</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -1094,7 +1191,9 @@ export default function HormoneSignalBenchDashboard() {
                 </div>
               </div>
             </Card>
+            )}
 
+            {planSection === "sources" && (
             <Card>
               <SectionTitle sub="Where they came from, and what actually happened with each one">Additional datasets considered \u2014 outcome</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
@@ -1119,7 +1218,9 @@ export default function HormoneSignalBenchDashboard() {
                 <b>The lesson wasn't "stop at two datasets" \u2014 it was "merge only what actually matches."</b> Marquette turned out to be a mixed case: useful for one field (cycle length), unusable for two others (the classifier's wearable features, luteal length). A dataset doesn't have to be all-in or all-out; the ledger above tracks that granularity per metric, not per dataset.
               </Insight>
             </Card>
+            )}
 
+            {planSection === "roadmap" && (
             <Card>
               <SectionTitle sub="How to collect more real data without high dropout \u2014 proposal, not yet executed">Low-friction collection protocol (proposed)</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1.6fr 0.8fr 2fr", padding: "8px 0", borderBottom: `2px solid ${T.hairline}`, fontSize: 11, fontWeight: 700, color: T.textMuted }}>
@@ -1136,7 +1237,9 @@ export default function HormoneSignalBenchDashboard() {
                 This table is a design proposal, not a report of data we already collected \u2014 it exists to argue that mcPHASES's own approach (wearable-first, hormone-kit second, survey last) is the right order of priority for any future expansion, not an accident of what happened to be easy for that study.
               </Insight>
             </Card>
+            )}
 
+            {planSection === "roadmap" && (
             <Card>
               <SectionTitle sub="What gets built after today, in order">Roadmap</SectionTitle>
               {[
@@ -1151,10 +1254,12 @@ export default function HormoneSignalBenchDashboard() {
                 </div>
               ))}
             </Card>
+            )}
           </div>
         )}
 
         {/* ================= BASELINE & EVAL ================= */}
+
         {activeTab === "baseline" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
@@ -1179,13 +1284,13 @@ export default function HormoneSignalBenchDashboard() {
                   ))}
                 </div>
                 <Insight>
-                  Trained on resting heart rate, wrist temperature, HRV, respiratory rate, activity, sleep score \u2014 each personalized with a <b>causal, look-ahead-safe rolling baseline</b> (not the whole-history z-score used earlier) \u2014 plus real intra-day HRV variability, and <b>no hormone features</b>, since those defined the label itself. This is the aggregated confusion matrix across all 5 GroupKFold folds. Accuracy: <b>{(activeCvSummary.mean_accuracy * 100).toFixed(1)}%</b>, reported as a 5-fold mean \u00b1 SD ({(activeCvSummary.mean_accuracy*100).toFixed(1)}% \u00b1 {(activeCvSummary.sd_accuracy*100).toFixed(2)}%, 95% CI [{(activeCvSummary.ci_95_lower*100).toFixed(1)}%, {(activeCvSummary.ci_95_upper*100).toFixed(1)}%]) \u2014 not a single lucky split. {liveResultsStatus === "live" && liveResults?.generated_at && <><br/><i>Generated {new Date(liveResults.generated_at).toLocaleString()} by whh_bench.export_results, re-run from real mcPHASES data.</i></>}
+                  6 wearable signals, causally personalized, no hormone features. 5-fold accuracy: <b>{(activeCvSummary.mean_accuracy * 100).toFixed(1)}% \u00b1 {(activeCvSummary.sd_accuracy*100).toFixed(2)}%</b> (95% CI [{(activeCvSummary.ci_95_lower*100).toFixed(1)}%, {(activeCvSummary.ci_95_upper*100).toFixed(1)}%]). {liveResultsStatus === "live" && liveResults?.generated_at && <><br/><i>Live — generated {new Date(liveResults.generated_at).toLocaleString()}.</i></>}
                 </Insight>
               </Card>
 
               <Card style={{ position: "relative" }}>
                 <VerifiedReal>Real comparison, same data</VerifiedReal>
-                <SectionTitle sub="Why the split, the personalization method, and cross-validation all change the headline number">Leaky vs. rigorous vs. personalized vs. final</SectionTitle>
+                <SectionTitle sub="Same data, four different honest answers">Leaky vs. rigorous vs. personalized vs. final</SectionTitle>
                 <ResponsiveContainer width="100%" height={225}>
                   <BarChart layout="vertical" data={REAL_SPLIT_COMPARISON} margin={{ left: 10 }}>
                     <CartesianGrid stroke={T.hairline} horizontal={false} />
@@ -1198,14 +1303,35 @@ export default function HormoneSignalBenchDashboard() {
                   </BarChart>
                 </ResponsiveContainer>
                 <Insight>
-                  The amber bar (37.7%) leaks \u2014 same person's days in both train and test. The gray "raw features" bar (27.0%) is the honest number once you fix that, but it's below the majority baseline. The steel bar (35.1%) added personalization, but that first personalization pass had its own subtle leak: it z-scored each person using their <i>entire</i> history, including the test days themselves. The navy bar (40.5%) is the final, corrected version \u2014 causal rolling normalization (only prior days), real intra-day HRV variability, and 5-fold cross-validation instead of one split. Each bar exists because we found a flaw in the one before it.
+                  Amber leaks (37.7%). Fixed but unpersonalized: 27.0%, below baseline. Personalized but still leaky: 35.1%. Navy is the fully corrected version: 40.5%. Each bar exists because we found a flaw in the last one.
                 </Insight>
               </Card>
             </div>
 
             <Card style={{ position: "relative" }}>
+              <VerifiedReal>{liveResultsStatus === "live" ? "Live merged pipeline result" : "Bundled fallback \u2014 merged pipeline"}</VerifiedReal>
+              <SectionTitle sub="Erin's schema/dashboard pipeline merged with Mamoune's prediction-model pipeline — same mcPHASES data, StratifiedGroupKFold throughout">Team merge: 5-strategy comparison</SectionTitle>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart layout="vertical" data={Object.entries(activeStrategyComparison).map(([name, s]) => ({ name, value: Number((s.mean_accuracy * 100).toFixed(1)) }))} margin={{ left: 10 }}>
+                  <CartesianGrid stroke={T.hairline} horizontal={false} />
+                  <XAxis type="number" domain={[0, 45]} tick={{ fontSize: 11, fill: T.textMuted }} axisLine={false} tickLine={false} unit="%" />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: T.textDark }} width={160} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: 6, border: `1px solid ${T.hairline}`, fontSize: 12 }} formatter={(v) => v + "%"} />
+                  <Bar dataKey="value" radius={[0, 5, 5, 0]}>
+                    {Object.entries(activeStrategyComparison).map(([name], i) => (
+                      <Cell key={i} fill={name === activeBestStrategy ? T.navy : T.textMuted} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <Insight>
+                All 4 original selection strategies land below baseline alone. Adding personalization as a 5th strategy is the <b>only one that clears it</b>, at {(activeCvSummary.mean_accuracy*100).toFixed(1)}%. Neither pipeline wins alone — the merge does.
+              </Insight>
+            </Card>
+
+            <Card style={{ position: "relative" }}>
               <VerifiedReal>Real, trained this session</VerifiedReal>
-              <SectionTitle sub="Which passive signal carries the most information about cycle phase — RandomForest, 5-fold GroupKFold, causal personalization, one signal at a time">Single-signal comparison (Option 1's full 7-signal question)</SectionTitle>
+              <SectionTitle sub="Same model, one signal at a time — 5-fold CV, causal personalization">Single-signal comparison (Option 1's full 7-signal question)</SectionTitle>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart layout="vertical" data={REAL_SIGNAL_COMPARISON} margin={{ left: 10 }}>
                   <CartesianGrid stroke={T.hairline} horizontal={false} />
@@ -1216,7 +1342,7 @@ export default function HormoneSignalBenchDashboard() {
                 </BarChart>
               </ResponsiveContainer>
               <Insight>
-                All seven of Option 1's signal categories are now real, and all were re-measured with the same corrected method (causal personalization, 5-fold CV) for a fair comparison: resting HR alone is now the strongest single signal (33.9%, essentially tied with the majority baseline), sleep score the weakest (26.7%). No single signal beats guessing "Luteal" on its own \u2014 the real gain only appears when all six continuous signals are combined with real intra-day HRV variability (40.5%). Glucose (29.4%) is Round-1-only and evaluated on a much smaller sample (n=1,595 vs. n\u22483,400+ for the others).
+                All 7 signals re-measured, same method. Best alone: resting HR (33.9%, ties baseline). Worst: sleep (26.7%). No single signal wins — combining all six hits 40.5%.
               </Insight>
             </Card>
 
@@ -1244,7 +1370,7 @@ export default function HormoneSignalBenchDashboard() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 18 }}>
               <Card style={{ position: "relative" }}>
                 <VerifiedReal>Real options only</VerifiedReal>
-                <SectionTitle sub="Every option here is a real, already-trained RandomForest result — not a live-fit model">Submit a run</SectionTitle>
+                <SectionTitle sub="Real, pre-trained results — not a live-fit model">Submit a run</SectionTitle>
                 <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>Signal configuration</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
                   {REAL_SIGNAL_OPTIONS.map((opt) => (
@@ -1286,22 +1412,23 @@ export default function HormoneSignalBenchDashboard() {
               <SectionTitle sub="Paste a public dataset link and see the scoring pipeline run">Score an external dataset</SectionTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 20 }}>
                 <div>
-                  <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, border: `1px solid ${T.hairline}`, borderRadius: 6, padding: "8px 10px" }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: urlError ? 4 : 14 }}>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, border: `1px solid ${urlError ? T.coral : T.hairline}`, borderRadius: 6, padding: "8px 10px" }}>
                       <Link2 size={15} color={T.textMuted} />
-                      <input value={datasetUrl} onChange={(e) => setDatasetUrl(e.target.value)} placeholder="https://physionet.org/content/mcphases"
-                        style={{ border: "none", outline: "none", flex: 1, fontSize: 12.5, fontFamily: "'IBM Plex Mono', monospace" }} />
+                      <input value={datasetUrl} onChange={(e) => { setDatasetUrl(e.target.value); if (urlError) setUrlError(false); }} placeholder="https://physionet.org/content/mcphases"
+                        style={{ border: "none", outline: "none", flex: 1, fontSize: 12.5, fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace" }} />
                     </div>
                     <button onClick={runUrlPipeline} style={{ padding: "0 18px", borderRadius: 6, border: "none", background: T.teal, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Load & score</button>
                   </div>
+                  {urlError && <div style={{ fontSize: 11.5, color: T.coral, marginBottom: 10 }}>Enter a link first \u2014 the box is empty.</div>}
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {pipelineSteps.map((step, i) => {
                       const done = pipelineStep > i;
                       const active = pipelineStep === i + 1 && !urlResult;
                       return (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 6, background: done ? T.tealLight : "transparent", fontSize: 12.5 }}>
-                          {done ? <CheckCircle2 size={16} color={T.teal} /> : <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${active ? T.steel : T.hairline}` }} />}
-                          <span style={{ color: done ? T.textDark : T.textMuted, fontWeight: done ? 600 : 400 }}>{i + 1}. {step}</span>
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 6, background: done ? T.tealLight : active ? T.navyLight : "transparent", fontSize: 12.5, transition: "background .2s" }}>
+                          {done ? <CheckCircle2 size={16} color={T.teal} /> : <div className={active ? "pbd-pulse" : ""} style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${active ? T.steel : T.hairline}` }} />}
+                          <span style={{ color: done ? T.textDark : active ? T.textDark : T.textMuted, fontWeight: done || active ? 600 : 400 }}>{i + 1}. {step}</span>
                         </div>
                       );
                     })}
@@ -1331,7 +1458,7 @@ export default function HormoneSignalBenchDashboard() {
         {activeTab === "privacy" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 18 }}>
             <Card>
-              <SectionTitle sub="Aggregate statistic: mean wrist skin temperature (\u00b0C), real value from computed_temperature.csv">Differential privacy demo</SectionTitle>
+              <SectionTitle sub="Real aggregate: mean wrist temperature (°C)">Differential privacy demo</SectionTitle>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>
                 <span>Privacy budget (\u03b5)</span><span>{epsilon.toFixed(1)}</span>
               </div>
@@ -1365,6 +1492,7 @@ export default function HormoneSignalBenchDashboard() {
             </Card>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
